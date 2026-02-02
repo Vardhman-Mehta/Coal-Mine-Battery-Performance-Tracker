@@ -1,35 +1,65 @@
 import { Text } from "@react-three/drei";
+import { useState } from "react";
 
 export default function Panel3D({ title, children, isActive }) {
-  return (
-    <group>
+  const [hovered, setHovered] = useState(false);
 
+  // 🎨 Color palette (easy to tweak later)
+  const baseColor = "#141414";          // panel body
+  const hoverGlow = "#3aa6ff";          // soft blue (hover)
+  const activeGlow = "#2ef2c9";         // teal/cyan (active)
+
+  return (
+    <group
+      rotation={[
+        hovered ? -0.04 : 0,
+        hovered ? 0.04 : 0,
+        0,
+      ]}
+    >
       {/* PANEL BODY */}
       <mesh
         castShadow
-        receiveShadow={false}
         onPointerOver={(e) => {
           e.stopPropagation();
-          e.object.material.color.set("#1f1f1f");
+          setHovered(true);
         }}
         onPointerOut={(e) => {
           e.stopPropagation();
-          e.object.material.color.set("#141414");
+          setHovered(false);
         }}
       >
-        <boxGeometry args={[1.6, 0.9, 0.05]} />
+        <boxGeometry args={[1.6, 0.9, 0.06]} />
         <meshStandardMaterial
-          color="#141414"
-          emissive={isActive ? "#1aff1a" : "#000000"}
-          emissiveIntensity={0.3}
+          color={baseColor}
+
+          // ✨ Glow logic
+          emissive={
+            isActive
+              ? activeGlow
+              : hovered
+              ? hoverGlow
+              : "#000000"
+          }
+          emissiveIntensity={
+            isActive
+              ? 0.35     // focused but calm
+              : hovered
+              ? 0.22     // subtle hover cue
+              : 0
+          }
+
+          // 🎯 Material feel (IMPORTANT)
+          roughness={0.35}   // slightly glossy
+          metalness={0.15}   // subtle industrial feel
         />
       </mesh>
 
       {/* TITLE */}
       <Text
-        position={[0, 0.38, 0.08]}
+        position={[0, 0.38, 0.09]}
         fontSize={0.07}
-        color="#ffffff"
+        color={isActive ? "#eafffb" : "#ffffff"}
         anchorX="center"
         anchorY="middle"
         depthTest={false}
@@ -38,10 +68,9 @@ export default function Panel3D({ title, children, isActive }) {
       </Text>
 
       {/* CONTENT */}
-      <group position={[0, -0.05, 0.08]}>
+      <group position={[0, -0.05, 0.09]}>
         {children}
       </group>
-
     </group>
   );
 }

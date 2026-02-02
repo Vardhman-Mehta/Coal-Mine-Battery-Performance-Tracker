@@ -1,77 +1,4 @@
-
-
-
-
-
-// import { Interactive } from "@react-three/xr";
-
-// import Panel3D from "../components/Panel3D";
-// import TextValue3D from "../components/TextValue3D";
-// import MapPlane3D from "../components/MapPlane3D";
-
-// export default function ControlRoom() {
-//   const humidity = 0;
-//   const temperature = 0;
-//   const voltage1 = 0;
-//   const voltage2 = 0.02;
-
-//   return (
-//     <group position={[0, 0, 0]}>
-
-//       {/* ───────── TOP ROW (slightly back) ───────── */}
-//       <Interactive onSelect={() => console.log("Temp-Hum Relation selected")}>
-//         <Panel3D
-//           title="Temp-Hum Relation"
-//           position={[-1.8, 0.8, -0.2]}   // 👈 z = -0.2
-//         />
-//       </Interactive>
-
-//       <Interactive onSelect={() => console.log("Temp-Humidity Chart selected")}>
-//         <Panel3D
-//           title="Temp-Humidity Chart"
-//           position={[1.8, 0.8, -0.2]}    // 👈 z = -0.2
-//         />
-//       </Interactive>
-
-//       {/* ───────── MIDDLE ROW (base plane) ───────── */}
-//       <Interactive onSelect={() => console.log("Humidity Monitoring selected")}>
-//         <Panel3D
-//           title="Humidity Monitoring"
-//           position={[-1.8, 0, 0]}        // 👈 z = 0
-//         >
-//           <TextValue3D label="Humidity" value={humidity} position={[0, 0.1, 0]} />
-//         </Panel3D>
-//       </Interactive>
-
-//       {/* Map stays in middle plane */}
-//       <MapPlane3D position={[0, 0, 0]} />
-
-//       <Interactive onSelect={() => console.log("Voltage-Temp selected")}>
-//         <Panel3D
-//           title="Voltage-Temp"
-//           position={[1.8, 0, 0]}         // 👈 z = 0
-//         >
-//           <TextValue3D label="Voltage" value={voltage1} position={[0, 0.1, 0]} />
-//           <TextValue3D label="Temp" value={temperature} position={[0, -0.1, 0]} />
-//         </Panel3D>
-//       </Interactive>
-
-//       {/* ───────── BOTTOM ROW (slightly forward) ───────── */}
-//       <Interactive onSelect={() => console.log("Voltage Monitoring selected")}>
-//         <Panel3D
-//           title="Voltage Monitoring & Temp"
-//           position={[0, -0.9, 0.2]}      // 👈 z = +0.2
-//         >
-//           <TextValue3D label="V1" value={voltage1} position={[-0.5, 0, 0]} />
-//           <TextValue3D label="V2" value={voltage2} position={[0.5, 0, 0]} />
-//         </Panel3D>
-//       </Interactive>
-
-//     </group>
-//   );
-// }
-
-
+// src/scenes/ControlRoom.jsx
 
 import { Interactive } from "@react-three/xr";
 import { useRef, useState } from "react";
@@ -81,9 +8,10 @@ import Panel3D from "../components/Panel3D";
 import TextValue3D from "../components/TextValue3D";
 import MapPlane3D from "../components/MapPlane3D";
 
-export default function ControlRoom({activePanelRef}) {
+export default function ControlRoom({ activePanelRef }) {
   const [activePanel, setActivePanel] = useState(null);
 
+  // One ref per panel (keys NEVER change)
   const panels = {
     tempHum: useRef(),
     tempHumidityChart: useRef(),
@@ -92,12 +20,14 @@ export default function ControlRoom({activePanelRef}) {
     bottom: useRef(),
   };
 
+  // Z-depth levels
   const baseZ = {
     back: -0.2,
     middle: 0,
     front: 0.35,
   };
 
+  // Default depth per panel
   const defaultZ = {
     tempHum: baseZ.back,
     tempHumidityChart: baseZ.back,
@@ -106,46 +36,51 @@ export default function ControlRoom({activePanelRef}) {
     bottom: baseZ.middle,
   };
 
-  // Smooth animation
+  // Smooth animation + active panel tracking
   useFrame(() => {
     let foundActive = false;
-  
+
     Object.entries(panels).forEach(([key, ref]) => {
       if (!ref.current) return;
-  
+
       const isActive = activePanel === key;
       const targetZ = isActive ? baseZ.front : defaultZ[key];
       const targetScale = isActive ? 1.05 : 1;
-  
+
+      // Smooth depth animation
       ref.current.position.z +=
         (targetZ - ref.current.position.z) * 0.08;
-  
+
+      // Smooth scale animation
       ref.current.scale.x +=
         (targetScale - ref.current.scale.x) * 0.08;
       ref.current.scale.y +=
         (targetScale - ref.current.scale.y) * 0.08;
       ref.current.scale.z +=
         (targetScale - ref.current.scale.z) * 0.08;
-  
-      // ✅ Set active panel ref safely
+
+      // Track active panel for camera focus
       if (isActive && activePanelRef) {
         activePanelRef.current = ref.current;
         foundActive = true;
       }
     });
-  
-    // ✅ Clear ref when nothing active
+
+    // Clear active ref if nothing selected
     if (!foundActive && activePanelRef) {
       activePanelRef.current = null;
     }
   });
-  
 
   return (
     <group onClick={() => setActivePanel(null)}>
-      
-      {/* ───── TOP LEFT ───── */}
-      <Interactive onSelect={() => setActivePanel(activePanel === "tempHum" ? null : "tempHum")}>
+
+      {/* ───────── TOP LEFT ───────── */}
+      <Interactive
+        onSelect={() =>
+          setActivePanel(activePanel === "tempHum" ? null : "tempHum")
+        }
+      >
         <group
           ref={panels.tempHum}
           position={[-1.6, 0.8, defaultZ.tempHum]}
@@ -155,31 +90,47 @@ export default function ControlRoom({activePanelRef}) {
           }}
         >
           <Panel3D
-            title="Temp-Hum Relation"
+            title="Relation between temperature and humidity"
             isActive={activePanel === "tempHum"}
           />
         </group>
       </Interactive>
 
-      {/* ───── TOP RIGHT ───── */}
-      <Interactive onSelect={() => setActivePanel(activePanel === "tempHumidityChart" ? null : "tempHumidityChart")}>
+      {/* ───────── TOP RIGHT ───────── */}
+      <Interactive
+        onSelect={() =>
+          setActivePanel(
+            activePanel === "tempHumidityChart"
+              ? null
+              : "tempHumidityChart"
+          )
+        }
+      >
         <group
           ref={panels.tempHumidityChart}
           position={[1.6, 0.8, defaultZ.tempHumidityChart]}
           onClick={(e) => {
             e.stopPropagation();
-            setActivePanel(activePanel === "tempHumidityChart" ? null : "tempHumidityChart");
+            setActivePanel(
+              activePanel === "tempHumidityChart"
+                ? null
+                : "tempHumidityChart"
+            );
           }}
         >
           <Panel3D
-            title="Temp-Humidity Chart"
+            title="temperature-humidity"
             isActive={activePanel === "tempHumidityChart"}
           />
         </group>
       </Interactive>
 
-      {/* ───── MIDDLE LEFT ───── */}
-      <Interactive onSelect={() => setActivePanel(activePanel === "humidity" ? null : "humidity")}>
+      {/* ───────── MIDDLE LEFT ───────── */}
+      <Interactive
+        onSelect={() =>
+          setActivePanel(activePanel === "humidity" ? null : "humidity")
+        }
+      >
         <group
           ref={panels.humidity}
           position={[-1.6, 0, defaultZ.humidity]}
@@ -197,11 +148,18 @@ export default function ControlRoom({activePanelRef}) {
         </group>
       </Interactive>
 
-      {/* ───── MAP (VISUAL ONLY) ───── */}
-      <MapPlane3D position={[0, 0, baseZ.middle]} />
+      {/* ───────── CENTER MAP ───────── */}
+      <MapPlane3D
+        position={[0, 0, baseZ.middle]}
+        title="Location Tracing"
+      />
 
-      {/* ───── MIDDLE RIGHT ───── */}
-      <Interactive onSelect={() => setActivePanel(activePanel === "voltage" ? null : "voltage")}>
+      {/* ───────── MIDDLE RIGHT ───────── */}
+      <Interactive
+        onSelect={() =>
+          setActivePanel(activePanel === "voltage" ? null : "voltage")
+        }
+      >
         <group
           ref={panels.voltage}
           position={[1.6, 0, defaultZ.voltage]}
@@ -211,7 +169,7 @@ export default function ControlRoom({activePanelRef}) {
           }}
         >
           <Panel3D
-            title="Voltage-Temp"
+            title="Voltage-Temperature"
             isActive={activePanel === "voltage"}
           >
             <TextValue3D label="Voltage" value={0} position={[0, 0.1, 0]} />
@@ -220,8 +178,12 @@ export default function ControlRoom({activePanelRef}) {
         </group>
       </Interactive>
 
-      {/* ───── BOTTOM ───── */}
-      <Interactive onSelect={() => setActivePanel(activePanel === "bottom" ? null : "bottom")}>
+      {/* ───────── BOTTOM ───────── */}
+      <Interactive
+        onSelect={() =>
+          setActivePanel(activePanel === "bottom" ? null : "bottom")
+        }
+      >
         <group
           ref={panels.bottom}
           position={[0, -0.9, defaultZ.bottom]}
@@ -231,7 +193,7 @@ export default function ControlRoom({activePanelRef}) {
           }}
         >
           <Panel3D
-            title="Voltage Monitoring & Temp"
+            title="Voltage Monitoring and Temperature"
             isActive={activePanel === "bottom"}
           >
             <TextValue3D label="V1" value={0} position={[-0.5, 0, 0]} />
