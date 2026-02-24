@@ -1,7 +1,9 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { XR, VRButton } from "@react-three/xr";
-import { OrbitControls } from "@react-three/drei";
+import { OrbitControls, Environment } from "@react-three/drei";
 import { useRef } from "react";
+import * as THREE from "three";
+import MapOverlay from "../components/MapOverlay.jsx";
 
 import ControlRoom from "./ControlRoom";
 
@@ -42,15 +44,31 @@ export default function XRScene() {
         camera={{ position: [0, 1.2, 4], fov: 55 }}
         style={{ width: "100vw", height: "100vh" }}
       >
-        {/* Controls */}
+
         <OrbitControls
           enableRotate
-          enablePan={false}
+          enablePan
           enableZoom
+          panSpeed={0.8}
+          rotateSpeed={0.6}
+          zoomSpeed={0.8}
+          dampingFactor={0.08}
+          enableDamping
+          touches={{
+            ONE: THREE.TOUCH.ROTATE,
+            TWO: THREE.TOUCH.PAN,
+          }}
         />
 
         {/* Background */}
-        <color attach="background" args={["#0f0f0f"]} />
+        {/* <color attach="background" args={["#535568"]} /> */}
+        {/* previouosly #ofofof */}
+
+        {/* Background from .exr in /public */}
+        <Environment
+          files="rogland_clear_night_4k.exr"
+          background
+        />
 
         {/* Lighting */}
         <directionalLight
@@ -64,7 +82,8 @@ export default function XRScene() {
         {/* Floor (reference only) */}
         <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -10, 0]}>
           <planeGeometry args={[50, 50]} />
-          <meshStandardMaterial color="#1a1a1a" />
+          <meshStandardMaterial color="#999999" /> 
+          {/* previously #1a1a1a */}
         </mesh>
 
         {/* Debug helper */}
@@ -75,7 +94,10 @@ export default function XRScene() {
           <CameraRig activePanelRef={activePanelRef} />
           <ControlRoom activePanelRef={activePanelRef} />
         </XR>
+
       </Canvas>
+
+      <MapOverlay />
     </>
   );
 }

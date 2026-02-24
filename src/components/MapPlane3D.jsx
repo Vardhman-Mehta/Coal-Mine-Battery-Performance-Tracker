@@ -11,7 +11,7 @@ export default function MapPlane3D({ position }) {
         <meshStandardMaterial
           map={texture}
           transparent
-          opacity={0.6}
+          opacity={0.9}
           depthTest={false}   // 🔴 KEY LINE
           depthWrite={false}
         />

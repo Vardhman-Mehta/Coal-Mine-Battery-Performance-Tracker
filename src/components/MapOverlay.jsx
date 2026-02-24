@@ -1,0 +1,160 @@
+import { useEffect, useRef, useState } from "react";
+import Map, { NavigationControl } from "react-map-gl/mapbox";
+import "mapbox-gl/dist/mapbox-gl.css";
+
+console.log("MapOverlay mounted");
+
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+console.log("HIIIIIIIIIIIIIIIIIIIIIIII", import.meta.env.VITE_MAPBOX_TOKEN);
+
+export default function MapOverlay() {
+  const [visible, setVisible] = useState(false);
+  const [animateIn, setAnimateIn] = useState(false);
+  const mapRef = useRef(null);
+
+  /* ---------------- EVENT LISTENERS ---------------- */
+  useEffect(() => {
+    const open = () => {
+      setVisible(true);
+      setTimeout(() => setAnimateIn(true), 10);
+    };
+
+    const close = () => {
+      setAnimateIn(false);
+      setTimeout(() => setVisible(false), 400);
+    };
+
+    window.addEventListener("open-map", open);
+    window.addEventListener("close-map", close);
+
+    return () => {
+      window.removeEventListener("open-map", open);
+      window.removeEventListener("close-map", close);
+    };
+  }, []);
+
+  /* ---------------- MAP FLY SYNC ---------------- */
+  useEffect(() => {
+    if (!mapRef.current || !visible) return;
+
+    mapRef.current.flyTo({
+      center: [77.2, 23.5],
+      zoom: 7,
+      pitch: 45,
+      speed: 1.2,
+      curve: 1.4,
+      essential: true,
+    });
+  }, [visible]);
+
+  if (!visible) return null;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        backdropFilter: "blur(12px)",
+        background: "rgba(0,0,0,0.6)",
+        transition: "all 0.4s ease",
+        opacity: animateIn ? 1 : 0,
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          inset: "8%",
+          borderRadius: "20px",
+          overflow: "hidden",
+          boxShadow: "0 0 80px rgba(0,0,0,0.8)",
+          transform: animateIn
+            ? "scale(1)"
+            : "scale(0.85)",
+          transition: "all 0.4s cubic-bezier(.22,1,.36,1)",
+        }}
+      >
+
+        <Map
+            ref={mapRef}
+            mapboxAccessToken={MAPBOX_TOKEN}
+            initialViewState={{
+                latitude: 23.5,
+                longitude: 77.2,
+                zoom: 15,
+                pitch: 60,
+                bearing: -20,
+            }}
+            mapStyle="mapbox://styles/mapbox/satellite-streets-v12"
+            style={{ width: "100%", height: "100%" }}
+            onLoad={(e) => {
+                const map = e.target;
+
+                map.addSource("mapbox-dem", {
+                    type: "raster-dem",
+                    url: "mapbox://mapbox.terrain-rgb",
+                    tileSize: 512,
+                    maxzoom: 14,
+                    });
+
+                map.setTerrain({ source: "mapbox-dem", exaggeration: 1.5 });
+
+                map.addLayer({
+                id: "3d-buildings",
+                source: "composite",
+                "source-layer": "building",
+                filter: ["==", "extrude", "true"],
+                type: "fill-extrusion",
+                minzoom: 14,
+                paint: {
+                    "fill-extrusion-color": "#aaa",
+                    "fill-extrusion-height": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    14,
+                    0,
+                    15,
+                    ["get", "height"],
+                    ],
+                    "fill-extrusion-base": [
+                    "interpolate",
+                    ["linear"],
+                    ["zoom"],
+                    14,
+                    0,
+                    15,
+                    ["get", "min_height"],
+                    ],
+                    "fill-extrusion-opacity": 0.6,
+                },
+                });
+            }}
+            >
+            <NavigationControl position="bottom-right" />
+            </Map>
+      </div>
+
+      {/* Close Button */}
+      <button
+        onClick={() =>
+          window.dispatchEvent(new Event("close-map"))
+        }
+        style={{
+          position: "absolute",
+          top: 30,
+          right: 40,
+          padding: "10px 18px",
+          background: "#111",
+          color: "#fff",
+          border: "1px solid #444",
+          borderRadius: 8,
+          cursor: "pointer",
+          fontSize: "14px",
+        }}
+      >
+        ✕ Close
+      </button>
+    </div>
+  );
+}

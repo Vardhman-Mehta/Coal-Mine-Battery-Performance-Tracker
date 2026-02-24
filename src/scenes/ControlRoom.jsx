@@ -1,21 +1,44 @@
 // src/scenes/ControlRoom.jsx
 
 import { Interactive } from "@react-three/xr";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { useFrame } from "@react-three/fiber";
 
 import Panel3D from "../components/Panel3D";
 import TextValue3D from "../components/TextValue3D";
-import MapPlane3D from "../components/MapPlane3D";
+
+import { Html } from "@react-three/drei";
+import MapPreview from "../components/MapPreview";
 
 export default function ControlRoom({ activePanelRef }) {
   const [activePanel, setActivePanel] = useState(null);
+
+  useEffect(() => {
+    if (activePanel === "map") {
+      window.dispatchEvent(new Event("open-map"));
+    } else {
+      window.dispatchEvent(new Event("close-map"));
+    }
+  }, [activePanel]);
+
+  useEffect(() => {
+    const closeMap = () => {
+      setActivePanel(null);
+    };
+
+    window.addEventListener("close-map", closeMap);
+
+    return () => {
+      window.removeEventListener("close-map", closeMap);
+    };
+  }, []);
 
   // One ref per panel (keys NEVER change)
   const panels = {
     tempHum: useRef(),
     tempHumidityChart: useRef(),
     humidity: useRef(),
+    map: useRef(),              // ✅ NEW
     voltage: useRef(),
     bottom: useRef(),
   };
@@ -32,6 +55,7 @@ export default function ControlRoom({ activePanelRef }) {
     tempHum: baseZ.back,
     tempHumidityChart: baseZ.back,
     humidity: baseZ.middle,
+    map: baseZ.middle,          // ✅ NEW
     voltage: baseZ.middle,
     bottom: baseZ.middle,
   };
@@ -69,6 +93,7 @@ export default function ControlRoom({ activePanelRef }) {
     // Clear active ref if nothing selected
     if (!foundActive && activePanelRef) {
       activePanelRef.current = null;
+      // window.dispatchEvent(new Event("close-map")); // ✅ ensure map closes
     }
   });
 
@@ -148,11 +173,41 @@ export default function ControlRoom({ activePanelRef }) {
         </group>
       </Interactive>
 
-      {/* ───────── CENTER MAP ───────── */}
-      <MapPlane3D
-        position={[0, 0, baseZ.middle]}
-        title="Location Tracing"
-      />
+      {/* ───────── CENTER MAP PANEL ───────── */}
+      <Interactive
+        onSelect={() =>
+          setActivePanel(activePanel === "map" ? null : "map")
+        }
+      >
+        <group
+          ref={panels.map}
+          position={[0, 0, defaultZ.map]}
+          onClick={(e) => {
+            e.stopPropagation();
+            setActivePanel(activePanel === "map" ? null : "map");
+          }}
+        >
+          <Panel3D
+            title="Location Tracing"
+            isActive={activePanel === "map"}
+          >
+            {activePanel !== "map" && (
+              <Html
+                transform
+                position={[0, -0.05, 0.05]}
+                style={{
+                  width: "260px",
+                  height: "150px",
+                }}
+                distanceFactor={1.5}
+                pointerEvents="none"
+              >
+                <MapPreview />
+              </Html>
+            )}
+          </Panel3D>
+        </group>
+      </Interactive>
 
       {/* ───────── MIDDLE RIGHT ───────── */}
       <Interactive

@@ -4,10 +4,10 @@ import { useState } from "react";
 export default function Panel3D({ title, children, isActive }) {
   const [hovered, setHovered] = useState(false);
 
-  // 🎨 Color palette (easy to tweak later)
-  const baseColor = "#141414";          // panel body
-  const hoverGlow = "#3aa6ff";          // soft blue (hover)
-  const activeGlow = "#2ef2c9";         // teal/cyan (active)
+  // 🎨 Color palette
+  const baseColor = "#1b1b1b";
+  const hoverGlow = "#4fd1c5";     // soft teal
+  const activeGlow = "#22ff88";    // clean green
 
   return (
     <group
@@ -29,11 +29,11 @@ export default function Panel3D({ title, children, isActive }) {
           setHovered(false);
         }}
       >
-        <boxGeometry args={[1.6, 0.9, 0.06]} />
+        <boxGeometry args={[1.6, 0.9, 0.08]} />
         <meshStandardMaterial
           color={baseColor}
-
-          // ✨ Glow logic
+          roughness={0.35}
+          metalness={0.1}
           emissive={
             isActive
               ? activeGlow
@@ -42,16 +42,8 @@ export default function Panel3D({ title, children, isActive }) {
               : "#000000"
           }
           emissiveIntensity={
-            isActive
-              ? 0.35     // focused but calm
-              : hovered
-              ? 0.22     // subtle hover cue
-              : 0
+            isActive ? 0.35 : hovered ? 0.18 : 0
           }
-
-          // 🎯 Material feel (IMPORTANT)
-          roughness={0.35}   // slightly glossy
-          metalness={0.15}   // subtle industrial feel
         />
       </mesh>
 
@@ -59,7 +51,7 @@ export default function Panel3D({ title, children, isActive }) {
       <Text
         position={[0, 0.38, 0.09]}
         fontSize={0.07}
-        color={isActive ? "#eafffb" : "#ffffff"}
+        color={isActive ? "#eafff5" : "#ffffff"}
         anchorX="center"
         anchorY="middle"
         depthTest={false}
