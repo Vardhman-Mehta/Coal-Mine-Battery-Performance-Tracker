@@ -6,13 +6,19 @@ import * as THREE from "three";
 import ExperienceZoneSpatialAudio, {
   EXPERIENCE_AUDIO_UNLOCK_EVENT,
 } from "../components/ExperienceZoneSpatialAudio.jsx";
+import GradientBackground from "../components/GradientBackground.jsx";
 import MapOverlay from "../components/MapOverlay.jsx";
+import { useBackgroundConfig } from "../hooks/useBackgroundConfig.js";
 
 import ControlRoom from "./ControlRoom";
-import SceneControls from "../components/SceneControls";
+import SceneControls from "../components/SceneControls.jsx";
 
 const DEFAULT_CAMERA_POSITION = new THREE.Vector3(0, 1.2, 4);
 const DEFAULT_CAMERA_TARGET = new THREE.Vector3(0, 0, 0);
+const DASHBOARD_STAGE_HEIGHT = 0.18;
+const DASHBOARD_STAGE_TOP_Y = -1.9;
+const DASHBOARD_STAGE_POSITION = [0, DASHBOARD_STAGE_TOP_Y - DASHBOARD_STAGE_HEIGHT / 2, 1.2];
+const DASHBOARD_STAGE_SIZE = [6.4, DASHBOARD_STAGE_HEIGHT, 6.8];
 const TOP_LEFT_EXIT_BUTTON_STYLE = {
   position: "fixed",
   top: 20,
@@ -87,7 +93,7 @@ function CameraRig({
   return null;
 }
 
-export default function XRScene({ actions = [] ,chartData}) {
+export default function XRScene({ actions = [], chartData }) {
   const activePanelRef = useRef(null);
   const controlsRef = useRef(null);
   const experienceEyeRef = useRef(null);
@@ -104,7 +110,7 @@ export default function XRScene({ actions = [] ,chartData}) {
     []
   );
 
-  const [environmentFile, setEnvironmentFile] = useState("rogland_clear_night_4k.exr");
+  const [backgroundConfig, setBackgroundConfig] = useBackgroundConfig();
   const [activePanelKey, setActivePanelKey] = useState(null);
   const [hoveredPanelKey, setHoveredPanelKey] = useState(null);
   const [cameraMode, setCameraMode] = useState("default");
@@ -120,6 +126,8 @@ export default function XRScene({ actions = [] ,chartData}) {
   const orbitControlsLocked = isExperiencePOV || isReturningHome || isDraggingPanel;
   const effectiveHoveredPanelKey =
     isExperiencePOV && !isPresenting && !moveModeActive ? hoveredPanelKey : null;
+  const showGradientBackground = backgroundConfig.type === "gradient";
+  const activeHdriFile = backgroundConfig.hdriFile;
 
   const handleToggleMoveMode = useCallback(() => {
     if (isPresenting || isExperiencePOV || isReturningHome) {
@@ -256,7 +264,17 @@ export default function XRScene({ actions = [] ,chartData}) {
           }}
         />
 
-        <Environment files={environmentFile} background />
+        {showGradientBackground ? (
+          <>
+            <Environment key={`lighting-${activeHdriFile}`} files={activeHdriFile} />
+            <GradientBackground
+              colors={backgroundConfig.gradientColors}
+              motion={backgroundConfig.motion}
+            />
+          </>
+        ) : (
+          <Environment key={`background-${activeHdriFile}`} files={activeHdriFile} background />
+        )}
 
         <directionalLight
           position={[5, 6, 5]}
@@ -266,12 +284,10 @@ export default function XRScene({ actions = [] ,chartData}) {
         />
         <ambientLight intensity={0.5} />
 
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -10, 0]}>
-          <planeGeometry args={[50, 50]} />
+        <mesh position={DASHBOARD_STAGE_POSITION} receiveShadow castShadow>
+          <boxGeometry args={DASHBOARD_STAGE_SIZE} />
           <meshStandardMaterial color="#1a120d" roughness={0.94} metalness={0.08} />
         </mesh>
-
-        <axesHelper args={[3]} />
 
         <XR>
           <XRSessionBridge
@@ -324,7 +340,8 @@ export default function XRScene({ actions = [] ,chartData}) {
       </Canvas>
 
       <SceneControls
-        setEnvironmentFile={setEnvironmentFile}
+        backgroundConfig={backgroundConfig}
+        setBackgroundConfig={setBackgroundConfig}
         actions={actions}
         footerActions={[
           {

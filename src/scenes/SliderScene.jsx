@@ -1,13 +1,15 @@
 import { Canvas } from "@react-three/fiber";
 import { Environment } from "@react-three/drei";
 import { useEffect, useState } from "react";
+import GradientBackground from "../components/GradientBackground.jsx";
 import MapOverlay from "../components/MapOverlay.jsx";
 import PanelSliderReel from "../components/PanelSliderReel.jsx";
 import SceneControls from "../components/SceneControls.jsx";
+import { useBackgroundConfig } from "../hooks/useBackgroundConfig.js";
 import { useControlPanels } from "../hooks/useControlPanels.jsx";
 
 export default function SliderScene({ chartData, onBackToDashboard }) {
-  const [environmentFile, setEnvironmentFile] = useState("rogland_clear_night_4k.exr");
+  const [backgroundConfig, setBackgroundConfig] = useBackgroundConfig();
   const [activePanelKey, setActivePanelKey] = useState("tempHum");
   const panels = useControlPanels({
     chartData,
@@ -21,6 +23,9 @@ export default function SliderScene({ chartData, onBackToDashboard }) {
     window.dispatchEvent(new Event("close-map"));
   }, [activePanelKey]);
 
+  const showGradientBackground = backgroundConfig.type === "gradient";
+  const activeHdriFile = backgroundConfig.hdriFile;
+
   return (
     <>
       <Canvas
@@ -28,7 +33,17 @@ export default function SliderScene({ chartData, onBackToDashboard }) {
         camera={{ position: [0, 0.08, 6.7], fov: 38 }}
         style={{ width: "100vw", height: "100vh" }}
       >
-        <Environment files={environmentFile} background />
+        {showGradientBackground ? (
+          <>
+            <Environment key={`lighting-${activeHdriFile}`} files={activeHdriFile} />
+            <GradientBackground
+              colors={backgroundConfig.gradientColors}
+              motion={backgroundConfig.motion}
+            />
+          </>
+        ) : (
+          <Environment key={`background-${activeHdriFile}`} files={activeHdriFile} background />
+        )}
 
         <directionalLight
           position={[4, 5, 6]}
@@ -51,7 +66,8 @@ export default function SliderScene({ chartData, onBackToDashboard }) {
       </Canvas>
 
       <SceneControls
-        setEnvironmentFile={setEnvironmentFile}
+        backgroundConfig={backgroundConfig}
+        setBackgroundConfig={setBackgroundConfig}
         actions={[
           {
             label: "Back to Dashboard",

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import XRScene from "../scenes/XRScene";
+import HomePreviewScene from "../scenes/HomePreviewScene.jsx";
 import "../styles/homeIntro.css";
 
 const INTRO_LINES = [
@@ -30,7 +30,7 @@ function getRelativePoint(clientX, clientY, target) {
   };
 }
 
-export default function HomeIntro({ onEnter }) {
+export default function HomeIntro({ onEnter, chartData }) {
   const timeoutRef = useRef(null);
   const [isEntering, setIsEntering] = useState(false);
   const [pointer, setPointer] = useState({ x: 50, y: 50 });
@@ -67,20 +67,6 @@ export default function HomeIntro({ onEnter }) {
     }, ENTER_TRANSITION_MS);
   }, [isEntering, onEnter, pointer]);
 
-  useEffect(() => {
-    const handleKeyDown = (event) => {
-      if (event.key !== "Enter" && event.key !== " ") {
-        return;
-      }
-
-      event.preventDefault();
-      handleEnter();
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [handleEnter]);
-
   return (
     <div
       className={`app-shell${isEntering ? " app-shell--entering" : ""}`}
@@ -93,15 +79,12 @@ export default function HomeIntro({ onEnter }) {
       }}
     >
       <div className="scene-stage">
-        <XRScene />
+        <HomePreviewScene chartData={chartData} />
       </div>
 
-      <button
-        type="button"
+      <div
         className={`intro-overlay${isEntering ? " intro-overlay--entering" : ""}`}
         onPointerMove={handlePointerMove}
-        onPointerDown={handleEnter}
-        aria-label="Enter the experience"
       >
         <span className="intro-grid" aria-hidden="true" />
         <span className="intro-spotlight" aria-hidden="true" />
@@ -123,10 +106,17 @@ export default function HomeIntro({ onEnter }) {
             ))}
           </span>
 
-          <span className="intro-instruction">Click to illuminate</span>
-          <span className="intro-enter-pill">Enter</span>
+          <span className="intro-instruction">Enter the monitoring dashboard</span>
+          <button
+            type="button"
+            className="intro-enter-pill"
+            onClick={handleEnter}
+            aria-label="Enter the dashboard"
+          >
+            Enter
+          </button>
         </span>
-      </button>
+      </div>
     </div>
   );
 }

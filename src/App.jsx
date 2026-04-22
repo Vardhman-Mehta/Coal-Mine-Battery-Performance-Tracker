@@ -1,4 +1,4 @@
-import { use, useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import HomeIntro from "./components/HomeIntro";
 import { useChartData } from "./hooks/useChartData";
 import XRScene from "./scenes/XRScene";
@@ -73,5 +73,5 @@ export default function App() {
     );
   }
 
-  return <HomeIntro onEnter={() => navigate("/dashboard")} />;
+  return <HomeIntro chartData={chartData} onEnter={() => navigate("/dashboard")} />;
 }
