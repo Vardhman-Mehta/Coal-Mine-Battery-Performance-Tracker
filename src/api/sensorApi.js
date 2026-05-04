@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 
-const DEFAULT_SENSOR_API_BASE_URL = "http://10.131.205.166:5000";
+const DEFAULT_SENSOR_API_BASE_URL = "http://10.11.77.166:5000";
 const SENSOR_API_BASE_URL = (
   import.meta.env.VITE_SENSOR_API_BASE_URL || DEFAULT_SENSOR_API_BASE_URL
 ).replace(/\/+$/, "");

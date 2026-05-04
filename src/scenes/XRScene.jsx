@@ -215,6 +215,7 @@ export default function XRScene({ actions = [], chartData }) {
           return;
         }
 
+        setIsAnalysisDrawerOpen(false);
         window.dispatchEvent(new Event(EXPERIENCE_AUDIO_UNLOCK_EVENT));
         setCameraMode("experiencePOV");
         return;
@@ -272,18 +273,18 @@ export default function XRScene({ actions = [], chartData }) {
   };
 
   const handleToggleExperience = () => {
-    if (isPresenting || moveModeActive) {
+    if (isPresenting || moveModeActive || isReturningHome) {
       return;
     }
 
-    setCameraMode((currentMode) => {
-      if (currentMode === "experiencePOV") {
-        return "returnHome";
-      }
+    if (isExperiencePOV) {
+      setCameraMode("returnHome");
+      return;
+    }
 
-      window.dispatchEvent(new Event(EXPERIENCE_AUDIO_UNLOCK_EVENT));
-      return "experiencePOV";
-    });
+    setIsAnalysisDrawerOpen(false);
+    window.dispatchEvent(new Event(EXPERIENCE_AUDIO_UNLOCK_EVENT));
+    setCameraMode("experiencePOV");
   };
 
   return (
@@ -385,28 +386,30 @@ export default function XRScene({ actions = [], chartData }) {
         </XR>
       </Canvas>
 
-      <SceneControls
-        backgroundConfig={backgroundConfig}
-        setBackgroundConfig={setBackgroundConfig}
-        priorityAction={
-          <AnalysisActionCard
-            analysis={analysis}
-            hasAnalysis={hasAnalysis}
-            isLoading={isAnalysisLoading}
-            isRefreshing={isAnalysisRefreshing}
-            error={analysisError}
-            lastFetchedAt={lastFetchedAt}
-            onOpen={handleOpenAnalysis}
-          />
-        }
-        actions={actions}
-        footerActions={[
-          {
-            label: "Refresh",
-            onClick: () => chartData?.resetChartData?.(),
-          },
-        ]}
-      />
+      {!isExperiencePOV && (
+        <SceneControls
+          backgroundConfig={backgroundConfig}
+          setBackgroundConfig={setBackgroundConfig}
+          priorityAction={
+            <AnalysisActionCard
+              analysis={analysis}
+              hasAnalysis={hasAnalysis}
+              isLoading={isAnalysisLoading}
+              isRefreshing={isAnalysisRefreshing}
+              error={analysisError}
+              lastFetchedAt={lastFetchedAt}
+              onOpen={handleOpenAnalysis}
+            />
+          }
+          actions={actions}
+          footerActions={[
+            {
+              label: "Refresh",
+              onClick: () => chartData?.resetChartData?.(),
+            },
+          ]}
+        />
+      )}
 
       {moveModeActive && !isPresenting && (
         <button onClick={handleExitMoveMode} style={TOP_LEFT_EXIT_BUTTON_STYLE}>
@@ -422,17 +425,19 @@ export default function XRScene({ actions = [], chartData }) {
 
       <MapOverlay />
 
-      <AnalysisDrawer
-        isOpen={isAnalysisDrawerOpen}
-        analysis={analysis}
-        hasAnalysis={hasAnalysis}
-        isLoading={isAnalysisLoading}
-        isRefreshing={isAnalysisRefreshing}
-        error={analysisError}
-        lastFetchedAt={lastFetchedAt}
-        onClose={handleCloseAnalysis}
-        onRefresh={() => refreshAnalysis({ background: hasAnalysis })}
-      />
+      {!isExperiencePOV && (
+        <AnalysisDrawer
+          isOpen={isAnalysisDrawerOpen}
+          analysis={analysis}
+          hasAnalysis={hasAnalysis}
+          isLoading={isAnalysisLoading}
+          isRefreshing={isAnalysisRefreshing}
+          error={analysisError}
+          lastFetchedAt={lastFetchedAt}
+          onClose={handleCloseAnalysis}
+          onRefresh={() => refreshAnalysis({ background: hasAnalysis })}
+        />
+      )}
     </>
   );
 }
